@@ -1,1 +1,20 @@
-export const metadata={title:"Loan Prepayment Calculator"}; export default function Page(){return <main className="container py-14"><div className="max-w-3xl"><div className="text-blue-700 font-bold text-sm">NEXZY MONEY</div><h1 className="text-4xl md:text-5xl font-black mt-2">Loan Prepayment Calculator</h1><p className="text-lg muted mt-4 leading-8">Use the Home Loan EMI calculator first; the full prepayment engine is the next production module.</p></div><div className="card p-8 mt-8"><h2 className="text-2xl font-bold">Production module</h2><p className="text-slate-600 mt-3 leading-7">This page is intentionally separated from the calculation engine so rules can be tested and updated without rebuilding the user interface. Next steps include adding verified financial-year rules, detailed inputs, charts, validation and source references.</p><div className="mt-6"><a className="btn btn-primary" href="/#tools">Explore working tools</a></div></div></main>}
+import { LoanPrepaymentCalculator } from "@/components/LoanPrepaymentCalculator";
+
+export const metadata = { title: "Loan Prepayment Calculator" };
+
+export default function Page() {
+  return (
+    <main className="container py-14">
+      <div className="max-w-4xl">
+        <div className="mb-8">
+          <div className="text-blue-700 font-bold text-sm">LOAN TOOLS</div>
+          <h1 className="text-4xl md:text-5xl font-black mt-2">Loan Prepayment Calculator</h1>
+          <p className="text-lg text-slate-600 mt-4">
+            See how prepayment can reduce your loan tenure and interest.
+          </p>
+        </div>
+        <LoanPrepaymentCalculator />
+      </div>
+    </main>
+  );
+}

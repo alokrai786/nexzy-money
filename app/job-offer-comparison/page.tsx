@@ -1,1 +1,20 @@
-export const metadata={title:"Job Offer Comparison"}; export default function Page(){return <main className="container py-14"><div className="max-w-3xl"><div className="text-blue-700 font-bold text-sm">NEXZY MONEY</div><h1 className="text-4xl md:text-5xl font-black mt-2">Job Offer Comparison</h1><p className="text-lg muted mt-4 leading-8">Compare fixed pay, variable pay, tax, PF, gratuity, bonus and location costs in the full version.</p></div><div className="card p-8 mt-8"><h2 className="text-2xl font-bold">Production module</h2><p className="text-slate-600 mt-3 leading-7">This page is intentionally separated from the calculation engine so rules can be tested and updated without rebuilding the user interface. Next steps include adding verified financial-year rules, detailed inputs, charts, validation and source references.</p><div className="mt-6"><a className="btn btn-primary" href="/#tools">Explore working tools</a></div></div></main>}
+import { JobOfferComparison } from "@/components/JobOfferComparison";
+
+export const metadata = { title: "Job Offer Comparison" };
+
+export default function Page() {
+  return (
+    <main className="container py-14">
+      <div className="max-w-6xl">
+        <div className="mb-8">
+          <div className="text-blue-700 font-bold text-sm">CAREER DECISIONS</div>
+          <h1 className="text-4xl md:text-5xl font-black mt-2">Job Offer Comparison</h1>
+          <p className="text-lg text-slate-600 mt-4">
+            Compare two job offers beyond headline CTC.
+          </p>
+        </div>
+        <JobOfferComparison />
+      </div>
+    </main>
+  );
+}
