@@ -151,7 +151,7 @@ function ResultCard({
   );
 }
 
-export const metadata = undefined;
+
 
 export default function IncomeTaxCalculatorPage() {
   const [age, setAge] = useState(35);
