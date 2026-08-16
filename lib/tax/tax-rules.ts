@@ -149,5 +149,13 @@ export function getTaxSlabs(
 ) {
   const category = getAgeCategory(age);
 
-  return TAX_RULES[regime].slabs[category];
+  const slabs = TAX_RULES[regime].slabs as Record<
+    AgeCategory,
+    readonly {
+      upto: number;
+      rate: number;
+    }[]
+  >;
+
+  return slabs[category];
 }
