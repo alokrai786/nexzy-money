@@ -30,14 +30,14 @@ export const TAX_RULES = {
         { upto: Infinity, rate: 0.30 },
       ],
 
-      age60to79: [
+      "60to79": [
         { upto: 300000, rate: 0 },
         { upto: 500000, rate: 0.05 },
         { upto: 1000000, rate: 0.20 },
         { upto: Infinity, rate: 0.30 },
       ],
 
-      age80plus: [
+      "80plus": [
         { upto: 500000, rate: 0 },
         { upto: 1000000, rate: 0.20 },
         { upto: Infinity, rate: 0.30 },
@@ -81,7 +81,7 @@ export const TAX_RULES = {
         { upto: Infinity, rate: 0.30 },
       ],
 
-      age60to79: [
+      "60to79": [
         { upto: 400000, rate: 0 },
         { upto: 800000, rate: 0.05 },
         { upto: 1200000, rate: 0.10 },
@@ -91,7 +91,7 @@ export const TAX_RULES = {
         { upto: Infinity, rate: 0.30 },
       ],
 
-      age80plus: [
+      "80plus": [
         { upto: 400000, rate: 0 },
         { upto: 800000, rate: 0.05 },
         { upto: 1200000, rate: 0.10 },
@@ -149,12 +149,7 @@ export function getTaxSlabs(
 ) {
   const category = getAgeCategory(age);
 
- const slabs = TAX_RULES[regime].slabs as unknown as Record<
-  AgeCategory,
-  readonly {
-    upto: number;
-    rate: number;
-  }[]
->;
+  const slabs = TAX_RULES[regime].slabs;
 
-return slabs[category];
+  return slabs[category];
+}
