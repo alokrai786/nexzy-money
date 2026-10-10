@@ -430,3 +430,127 @@ export function calculateFinancialHealth(
     nextActions: nextActions.length > 0 ? nextActions : ['Continue current financial practices'],
   };
 }
+
+// FD Calculator
+export function calculateFD(
+  principal: number,
+  annualRate: number,
+  tenure: number,
+  tenureUnit: 'months' | 'years',
+  compoundingFrequency: 'monthly' | 'quarterly' | 'halfYearly' | 'yearly'
+) {
+  const tenureYears = tenureUnit === 'years' ? tenure : tenure / 12;
+  
+  const compoundingMap: { [key: string]: number } = {
+    monthly: 12,
+    quarterly: 4,
+    halfYearly: 2,
+    yearly: 1,
+  };
+  
+  const n = compoundingMap[compoundingFrequency];
+  const r = Math.max(0, annualRate) / 100 / n;
+  const t = Math.max(0, tenureYears);
+  const periods = Math.max(0, Math.round(n * t));
+  
+  const maturityAmount = principal * Math.pow(1 + r, periods);
+  const interestEarned = Math.max(0, maturityAmount - principal);
+  
+  return {
+    principal: Math.max(0, principal),
+    annualRate: Math.max(0, annualRate),
+    tenure,
+    tenureUnit,
+    compoundingFrequency,
+    maturityAmount,
+    interestEarned,
+  };
+}
+
+// GST Calculator
+export function calculateGST(
+  amount: number,
+  gstRate: number,
+  mode: 'add' | 'remove',
+  taxType: 'cgst_sgst' | 'igst' = 'cgst_sgst'
+) {
+  const baseAmount = mode === 'add' ? amount : amount / (1 + gstRate / 100);
+  const gstAmount = baseAmount * (gstRate / 100);
+  const totalAmount = baseAmount + gstAmount;
+  
+  let cgst = 0;
+  let sgst = 0;
+  let igst = 0;
+  
+  if (taxType === 'cgst_sgst') {
+    cgst = gstAmount / 2;
+    sgst = gstAmount / 2;
+  } else {
+    igst = gstAmount;
+  }
+  
+  return {
+    baseAmount,
+    gstAmount,
+    gstRate,
+    cgst,
+    sgst,
+    igst,
+    totalAmount,
+    mode,
+    taxType,
+  };
+}
+
+// PPF Calculator
+export function calculatePPF(
+  annualInvestment: number,
+  investmentFrequency: 'monthly' | 'yearly',
+  investmentPeriod: number,
+  annualInterestRate: number
+) {
+  const monthlyInvestment = investmentFrequency === 'monthly' ? annualInvestment : annualInvestment / 12;
+  const monthlyRate = Math.max(0, annualInterestRate) / 100 / 12;
+  const months = Math.max(1, investmentPeriod * 12);
+  
+  let totalInvested = 0;
+  let maturityAmount = 0;
+  const yearlyBreakdown: Array<{
+    year: number;
+    yearlyInvested: number;
+    interestEarned: number;
+    totalCorpus: number;
+  }> = [];
+  
+  let corpus = 0;
+  
+  for (let m = 1; m <= months; m++) {
+    corpus = corpus * (1 + monthlyRate) + monthlyInvestment;
+    totalInvested += monthlyInvestment;
+    
+    if (m % 12 === 0) {
+      const year = m / 12;
+      const interestEarned = corpus - totalInvested;
+      yearlyBreakdown.push({
+        year,
+        yearlyInvested: monthlyInvestment * 12,
+        interestEarned,
+        totalCorpus: corpus,
+      });
+    }
+  }
+  
+  maturityAmount = corpus;
+  const totalInterestEarned = Math.max(0, maturityAmount - totalInvested);
+  
+  return {
+    annualInvestment,
+    investmentFrequency,
+    investmentPeriod,
+    annualInterestRate,
+    totalInvested,
+    totalInterestEarned,
+    maturityAmount,
+    yearlyBreakdown,
+  };
+}
