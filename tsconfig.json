@@ -1,24 +1,505 @@
-{
-  "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": false,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "baseUrl": ".",
-"paths": {
-  "@/*": ["./*"]
-},
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [{ "name": "next" }]
+'use client';
+
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  PolarAngleAxis,
+  RadialBar,
+  RadialBarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import CalculatorWrapper, {
+  CALCULATORS,
+  CALCULATOR_CATEGORIES,
+  type CalculatorId,
+} from '@/components/CalculatorWrapper';
+
+/**
+ * Drop a lifestyle photo at public/images/hero-lifestyle.jpg.
+ * Until it exists, the aurora gradient behind it is what shows.
+ */
+const HERO_IMAGE = '/images/hero-lifestyle.jpg';
+
+const QUICK_LINKS: CalculatorId[] = ['sip', 'home-loan', 'income-tax', 'ppf', 'fd', 'retirement'];
+
+/* -------------------------------------------------------------------------- */
+/*                         Hardcoded dashboard UI states                      */
+/* -------------------------------------------------------------------------- */
+
+const SPENDING = [
+  { label: 'Housing', amount: 18500, bar: 'bg-neon-400' },
+  { label: 'Food', amount: 9800, bar: 'bg-neon-500' },
+  { label: 'Shopping', amount: 7400, bar: 'bg-sky-400' },
+  { label: 'Bills', amount: 6300, bar: 'bg-violet-400' },
+  { label: 'Travel', amount: 6200, bar: 'bg-amber-400' },
+];
+const SPENDING_TOTAL = SPENDING.reduce((sum, s) => sum + s.amount, 0); // 48,200
+
+const INCOME = [
+  { month: 'May', income: 92000 },
+  { month: 'Jun', income: 96000 },
+  { month: 'Jul', income: 94000 },
+  { month: 'Aug', income: 101000 },
+  { month: 'Sep', income: 108000 },
+  { month: 'Oct', income: 112000 },
+];
+
+const PORTFOLIO = [
+  { period: 'Oct 25', Equity: 320, Debt: 180, Gold: 60 },
+  { period: 'Jan 26', Equity: 350, Debt: 185, Gold: 64 },
+  { period: 'Apr 26', Equity: 372, Debt: 190, Gold: 70 },
+  { period: 'Jul 26', Equity: 410, Debt: 196, Gold: 74 },
+];
+
+const HEALTH_SCORE = 68;
+const HEALTH_FACTORS = [
+  { label: 'Savings rate', value: '22%', tone: 'text-neon-300' },
+  { label: 'Debt to income', value: '31%', tone: 'text-amber-300' },
+  { label: 'Emergency fund', value: '4.2 months', tone: 'text-neon-300' },
+];
+
+const inr = (n: number): string => `₹${n.toLocaleString('en-IN')}`;
+
+const tooltipStyle = {
+  contentStyle: {
+    background: 'rgba(11,15,25,0.92)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    color: '#fff',
   },
-  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  labelStyle: { color: '#94A3B8' },
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                   Icons                                    */
+/* -------------------------------------------------------------------------- */
+
+function IconMenu() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h10" />
+    </svg>
+  );
+}
+
+function IconSearch() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m20 20-4-4" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Dashboard cards                              */
+/* -------------------------------------------------------------------------- */
+
+function DashCard({ title, children, className = '' }: { title: string; children: ReactNode; className?: string }) {
+  return (
+    <article className={`glass-card flex flex-col p-5 sm:p-6 ${className}`}>
+      <h3 className="text-sm font-medium text-slate-300">{title}</h3>
+      {children}
+    </article>
+  );
+}
+
+function SpendingCard() {
+  return (
+    <DashCard title="Spending this month">
+      <p className="mt-3 text-3xl font-semibold tracking-tight text-white">{inr(SPENDING_TOTAL)}</p>
+      <p className="mt-1 text-sm text-neon-300">6.4% lower than September</p>
+      <ul className="mt-5 space-y-3">
+        {SPENDING.map((s) => (
+          <li key={s.label}>
+            <div className="mb-1.5 flex justify-between text-xs text-slate-400">
+              <span>{s.label}</span>
+              <span className="text-slate-200">{inr(s.amount)}</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div className={`h-full rounded-full ${s.bar}`} style={{ width: `${(s.amount / SPENDING_TOTAL) * 100}%` }} />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </DashCard>
+  );
+}
+
+function IncomeCard() {
+  return (
+    <DashCard title="Income trend">
+      <p className="mt-3 text-3xl font-semibold tracking-tight text-white">{inr(112000)}</p>
+      <p className="mt-1 text-sm text-neon-300">3.7% higher than September</p>
+      <div className="mt-4 h-48 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={INCOME} margin={{ top: 6, right: 4, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#34D399" stopOpacity={0.55} />
+                <stop offset="100%" stopColor="#34D399" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+            <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} tickLine={false} axisLine={false} />
+            <YAxis hide domain={['dataMin - 10000', 'dataMax + 6000']} />
+            <Tooltip {...tooltipStyle} formatter={(value) => inr(Number(value))} />
+            <Area type="monotone" dataKey="income" name="Income" stroke="#34D399" strokeWidth={2.5} fill="url(#incomeFill)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </DashCard>
+  );
+}
+
+function PortfolioCard() {
+  return (
+    <DashCard title="Portfolio mix">
+      <p className="mt-3 text-3xl font-semibold tracking-tight text-white">₹6.80 L</p>
+      <p className="mt-1 text-sm text-neon-300">7.6% higher than April</p>
+      <div className="mt-4 h-48 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={PORTFOLIO} margin={{ top: 6, right: 4, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+            <XAxis dataKey="period" tick={{ fill: '#94A3B8', fontSize: 11 }} tickLine={false} axisLine={false} />
+            <YAxis hide />
+            <Tooltip {...tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} formatter={(value) => `₹${value}k`} />
+            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: '#94A3B8' }} />
+            <Bar dataKey="Equity" stackId="p" fill="#34D399" />
+            <Bar dataKey="Debt" stackId="p" fill="#38BDF8" />
+            <Bar dataKey="Gold" stackId="p" fill="#FBBF24" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </DashCard>
+  );
+}
+
+function HealthCard() {
+  return (
+    <DashCard title="Overall financial health index" className="relative overflow-hidden">
+      <div className="pointer-events-none absolute -bottom-20 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-neon-500/20 blur-3xl" />
+      <div className="relative mx-auto mt-3 h-52 w-52 drop-shadow-[0_0_16px_rgba(52,211,153,0.6)]">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart
+            data={[{ name: 'Health', value: HEALTH_SCORE }]}
+            innerRadius="74%"
+            outerRadius="100%"
+            startAngle={90}
+            endAngle={-270}
+            barSize={16}
+          >
+            <defs>
+              <linearGradient id="healthGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#A7F3D0" />
+                <stop offset="100%" stopColor="#10B981" />
+              </linearGradient>
+            </defs>
+            <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+            <RadialBar dataKey="value" cornerRadius={12} fill="url(#healthGradient)" background={{ fill: 'rgba(255,255,255,0.07)' }} />
+          </RadialBarChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-5xl font-semibold tracking-tight text-white">{HEALTH_SCORE}%</span>
+          <span className="mt-1 text-sm text-neon-300">Good, room to grow</span>
+        </div>
+      </div>
+      <dl className="relative mt-5 grid grid-cols-3 gap-3 text-center">
+        {HEALTH_FACTORS.map((f) => (
+          <div key={f.label} className="rounded-xl border border-white/5 bg-ink-950/40 p-2.5">
+            <dt className="text-[11px] leading-tight text-slate-400">{f.label}</dt>
+            <dd className={`mt-1 text-sm font-semibold ${f.tone}`}>{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </DashCard>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    Hero                                    */
+/* -------------------------------------------------------------------------- */
+
+function Hero({ onOpen }: { onOpen: (id: CalculatorId) => void }) {
+  const [query, setQuery] = useState('');
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return CALCULATORS.filter((c) => `${c.name} ${c.category} ${c.description}`.toLowerCase().includes(q)).slice(0, 6);
+  }, [query]);
+
+  const open = (id: CalculatorId) => {
+    setQuery('');
+    onOpen(id);
+  };
+
+  return (
+    <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-hero-aurora">
+      <div
+        className="absolute inset-0 -z-20 bg-cover bg-center"
+        style={{ backgroundImage: `url(${HERO_IMAGE})` }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 -z-10 bg-hero-fade" aria-hidden="true" />
+
+      <div className="flex min-h-[340px] flex-col items-center justify-center px-5 py-14 text-center sm:min-h-[420px] sm:px-10">
+        <h1 className="max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.5)] motion-safe:animate-float sm:text-5xl">
+          Hey, Need help? Just ask me anything
+        </h1>
+
+        <div className="relative mt-8 w-full max-w-xl">
+          <form
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (matches[0]) open(matches[0].id);
+            }}
+            className="glass-strong flex items-center gap-3 rounded-2xl px-4 py-3 shadow-glass focus-within:border-neon-400/60 focus-within:shadow-glow"
+          >
+            <span className="text-slate-400">
+              <IconSearch />
+            </span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setQuery('');
+              }}
+              placeholder="Try “home loan”, “tax” or “SIP”"
+              aria-label="Search calculators"
+              className="w-full bg-transparent text-base text-white placeholder:text-slate-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-neon-500 px-4 py-1.5 text-sm font-semibold text-ink-950 transition-colors hover:bg-neon-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-300"
+            >
+              Find
+            </button>
+          </form>
+
+          {query.trim() !== '' && (
+            <ul className="glass-strong absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl text-left shadow-glass">
+              {matches.length === 0 && <li className="px-4 py-3 text-sm text-slate-400">No calculator matches “{query}”.</li>}
+              {matches.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => open(c.id)}
+                    className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-white/5 focus-visible:bg-white/10 focus-visible:outline-none"
+                  >
+                    <span>
+                      <span className="block text-sm font-medium text-white">{c.name}</span>
+                      <span className="block text-xs text-slate-400">{c.description}</span>
+                    </span>
+                    <span className="shrink-0 text-xs text-neon-300">{c.category}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    Page                                    */
+/* -------------------------------------------------------------------------- */
+
+export default function Home() {
+  const [active, setActive] = useState<CalculatorId | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Open the sidebar by default on large screens only.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    setSidebarOpen(mq.matches);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && window.matchMedia('(max-width: 1023px)').matches) setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const openCalculator = (id: CalculatorId) => {
+    setActive(id);
+    if (window.matchMedia('(max-width: 1023px)').matches) setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goHome = () => {
+    setActive(null);
+    if (window.matchMedia('(max-width: 1023px)').matches) setSidebarOpen(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-app-gradient font-sans text-slate-200">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close calculator menu"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-xs lg:hidden"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        id="calculator-sidebar"
+        aria-label="Calculators"
+        aria-hidden={!sidebarOpen}
+        className={`glass-strong fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-y-0 border-l-0 transition-transform duration-300 ease-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-5 py-5">
+          <button
+            type="button"
+            onClick={goHome}
+            tabIndex={sidebarOpen ? 0 : -1}
+            className="text-lg font-semibold tracking-tight text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neon-400"
+          >
+            Nexzy<span className="text-neon-400">Money</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            tabIndex={sidebarOpen ? 0 : -1}
+            aria-label="Close calculator menu"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-400 lg:hidden"
+          >
+            <IconClose />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 pb-6">
+          <button
+            type="button"
+            onClick={goHome}
+            tabIndex={sidebarOpen ? 0 : -1}
+            aria-current={active === null ? 'page' : undefined}
+            className={`mb-4 flex w-full items-center rounded-xl px-3 py-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-400 ${
+              active === null ? 'bg-neon-500/15 text-neon-200' : 'text-slate-300 hover:bg-white/5'
+            }`}
+          >
+            Dashboard
+          </button>
+
+          {CALCULATOR_CATEGORIES.map((category) => (
+            <div key={category} className="mb-4">
+              <p className="px-3 pb-1.5 text-xs font-medium text-slate-500">{category}</p>
+              <ul>
+                {CALCULATORS.filter((c) => c.category === category).map((c) => {
+                  const isActive = c.id === active;
+                  return (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => openCalculator(c.id)}
+                        tabIndex={sidebarOpen ? 0 : -1}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-400 ${
+                          isActive ? 'bg-neon-500/15 text-neon-200 shadow-glow' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isActive ? 'bg-neon-400' : 'bg-white/20'}`} />
+                        {c.name.replace(' Calculator', '')}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main viewport */}
+      <div className={`transition-[padding] duration-300 ease-out ${sidebarOpen ? 'lg:pl-72' : 'lg:pl-0'}`}>
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/5 bg-ink-950/70 px-4 py-3 backdrop-blur-glass sm:px-8">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((o) => !o)}
+            aria-expanded={sidebarOpen}
+            aria-controls="calculator-sidebar"
+            className="flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 transition-colors hover:border-neon-400/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-400"
+          >
+            <IconMenu />
+            <span>Calculators</span>
+          </button>
+          {active !== null && (
+            <button
+              type="button"
+              onClick={goHome}
+              className="rounded-xl px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-400"
+            >
+              Back to dashboard
+            </button>
+          )}
+        </header>
+
+        <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6 sm:px-8 sm:py-8">
+          {active === null ? (
+            <>
+              <Hero onOpen={openCalculator} />
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <SpendingCard />
+                <IncomeCard />
+                <PortfolioCard />
+                <HealthCard />
+              </div>
+
+              <section aria-labelledby="quick-title">
+                <h2 id="quick-title" className="mb-3 text-lg font-semibold text-white">
+                  Popular calculators
+                </h2>
+                <div className="flex flex-wrap gap-2.5">
+                  {QUICK_LINKS.map((id) => {
+                    const c = CALCULATORS.find((calc) => calc.id === id);
+                    if (!c) return null;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => openCalculator(id)}
+                        className="glass-card rounded-xl px-4 py-2.5 text-sm text-slate-200 transition-colors hover:border-neon-400/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-400"
+                      >
+                        {c.name.replace(' Calculator', '')}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            </>
+          ) : (
+            <CalculatorWrapper activeId={active} />
+          )}
+        </main>
+      </div>
+    </div>
+  );
 }
